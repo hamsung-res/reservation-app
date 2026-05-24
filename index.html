@@ -425,7 +425,7 @@
       `;
     }
 
-    async function completeReservation() {
+    function completeReservation() {
       const name = document.getElementById('name').value.trim();
       const phone = document.getElementById('phone').value.trim();
 
@@ -448,38 +448,29 @@
       };
 
       const scriptUrl = 'https://script.google.com/macros/s/AKfycbwy_imd9uHlzHUo5PhuLZUCEFwt3BcNmE9risO2Yj6X9LLaeFpHSnYx1_ffv53LJtuUkw/exec';
+      const params = new URLSearchParams({
+        date: reservation.date,
+        time: reservation.time,
+        name: reservation.name,
+        phone: reservation.phone
+      });
 
-      try {
-       const formData = new FormData();
+      const img = new Image();
+      img.src = `${scriptUrl}?${params.toString()}`;
 
-formData.append('date', reservation.date);
-formData.append('time', reservation.time);
-formData.append('name', reservation.name);
-formData.append('phone', reservation.phone);
+      const saved = JSON.parse(localStorage.getItem('reservations') || '[]');
+      saved.push(reservation);
+      localStorage.setItem('reservations', JSON.stringify(saved));
 
-await fetch(scriptUrl, {
-  method: 'POST',
-  mode: 'no-cors',
-  body: formData
+      document.getElementById('completeSummary').innerHTML = `
+        이름: <strong>${name}</strong><br>
+        연락처: <strong>${phone}</strong><br>
+        날짜: <strong>${reservation.date}</strong><br>
+        시간: <strong>${reservation.time}</strong><br><br>
+        예약 신청이 완료되었습니다.
+      `;
 
-        });
-
-        const saved = JSON.parse(localStorage.getItem('reservations') || '[]');
-        saved.push(reservation);
-        localStorage.setItem('reservations', JSON.stringify(saved));
-
-        document.getElementById('completeSummary').innerHTML = `
-          이름: <strong>${name}</strong><br>
-          연락처: <strong>${phone}</strong><br>
-          날짜: <strong>${reservation.date}</strong><br>
-          시간: <strong>${reservation.time}</strong><br><br>
-          예약 신청이 완료되었습니다.
-        `;
-
-        goToPage('completePage');
-      } catch (error) {
-        alert('예약 저장 중 오류가 발생했습니다. 다시 시도해 주세요.');
-      }
+      goToPage('completePage');
     }
 
     function resetReservation() {
