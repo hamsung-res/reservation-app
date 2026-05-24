@@ -455,16 +455,11 @@
 
       const saveUrl = `${scriptUrl}?date=${encodeURIComponent(reservation.date)}&time=${encodeURIComponent(reservation.time)}&name=${encodeURIComponent(reservation.name)}&phone=${encodeURIComponent(reservation.phone)}&region=${encodeURIComponent(reservation.region)}`;
 
-      fetch(saveUrl)
-        .then(() => {
-          showComplete(reservation);
-        })
-        .catch(() => {
-          const img = new Image();
-          img.src = saveUrl;
-          showComplete(reservation);
-        });
-    }
+      const img = new Image();
+      img.src = saveUrl;
+
+      showComplete(reservation);
+   
 
     function showComplete(reservation) {
       const saved = JSON.parse(localStorage.getItem('reservations') || '[]');
