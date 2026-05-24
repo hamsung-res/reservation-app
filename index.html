@@ -424,7 +424,7 @@
       `;
     }
 
-    function completeReservation() {
+    async function completeReservation() {
       const name = document.getElementById('name').value.trim();
       const phone = document.getElementById('phone').value.trim();
 
@@ -446,19 +446,34 @@
         createdAt: new Date().toLocaleString('ko-KR')
       };
 
-      const saved = JSON.parse(localStorage.getItem('reservations') || '[]');
-      saved.push(reservation);
-      localStorage.setItem('reservations', JSON.stringify(saved));
+      const scriptUrl = 'https://script.google.com/macros/s/AKfycbxEYeNT8hTMqNXzwimL2lo6-rsJhu3VkhTD1ql073s_WlkiqxuAmhrnbL0Nyb_UCw5Qww/exec';
 
-      document.getElementById('completeSummary').innerHTML = `
-        이름: <strong>${name}</strong><br>
-        연락처: <strong>${phone}</strong><br>
-        날짜: <strong>${reservation.date}</strong><br>
-        시간: <strong>${reservation.time}</strong><br><br>
-        예약 신청이 완료되었습니다.
-      `;
+      try {
+        await fetch(scriptUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(reservation)
+        });
 
-      goToPage('completePage');
+        const saved = JSON.parse(localStorage.getItem('reservations') || '[]');
+        saved.push(reservation);
+        localStorage.setItem('reservations', JSON.stringify(saved));
+
+        document.getElementById('completeSummary').innerHTML = `
+          이름: <strong>${name}</strong><br>
+          연락처: <strong>${phone}</strong><br>
+          날짜: <strong>${reservation.date}</strong><br>
+          시간: <strong>${reservation.time}</strong><br><br>
+          예약 신청이 완료되었습니다.
+        `;
+
+        goToPage('completePage');
+      } catch (error) {
+        alert('예약 저장 중 오류가 발생했습니다. 다시 시도해 주세요.');
+      }
     }
 
     function resetReservation() {
