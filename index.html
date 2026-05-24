@@ -284,6 +284,9 @@
           <label for="phone">연락처</label>
           <input id="phone" type="tel" placeholder="010-0000-0000" />
 
+          <label for="region">지역</label>
+          <input id="region" type="text" placeholder="예: 대전 유성구" />
+
           <button onclick="completeReservation()">예약 신청하기</button>
           <p class="notice">예약 신청 내용은 구글시트에 자동 저장됩니다.</p>
         </div>
@@ -430,7 +433,8 @@
     function completeReservation() {
       const name = document.getElementById('name').value.trim();
       const phone = document.getElementById('phone').value.trim();
-
+      const region = document.getElementById('region').value.trim();
+      
       if (!name) {
         alert('이름을 입력해 주세요.');
         return;
@@ -444,11 +448,12 @@
       const reservation = {
         name,
         phone,
+        region,
         date: formatDate(selectedDate),
         time: selectedTime
       };
 
-      const saveUrl = `${scriptUrl}?date=${encodeURIComponent(reservation.date)}&time=${encodeURIComponent(reservation.time)}&name=${encodeURIComponent(reservation.name)}&phone=${encodeURIComponent(reservation.phone)}`;
+      const saveUrl = `${scriptUrl}?date=${encodeURIComponent(reservation.date)}&time=${encodeURIComponent(reservation.time)}&name=${encodeURIComponent(reservation.name)}&phone=${encodeURIComponent(reservation.phone)}&region=${encodeURIComponent(reservation.region)}`;
 
       fetch(saveUrl)
         .then(() => {
@@ -472,6 +477,7 @@
       document.getElementById('completeSummary').innerHTML = `
         이름: <strong>${reservation.name}</strong><br>
         연락처: <strong>${reservation.phone}</strong><br>
+        지역: <strong>${reservation.region}</strong><br>
         날짜: <strong>${reservation.date}</strong><br>
         시간: <strong>${reservation.time}</strong><br><br>
         예약 신청이 완료되었습니다.
@@ -485,6 +491,7 @@
       selectedTime = null;
       document.getElementById('name').value = '';
       document.getElementById('phone').value = '';
+      document.getElementById('region').value = '';
       goToPage('homePage');
     }
 
