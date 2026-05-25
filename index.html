@@ -314,6 +314,7 @@
     let selectedDate = null;
     let selectedTime = null;
     let reservedTimes = [];
+    let reservedKeys = [];
 
     const scriptUrl = 'https://script.google.com/macros/s/AKfycbwy_imd9uHlzHUo5PhuLZUCEFwt3BcNmE9risO2Yj6X9LLaeFpHSnYx1_ffv53LJtuUkw/exec';
 
@@ -321,12 +322,39 @@
       pages.forEach(id => document.getElementById(id).classList.add('hidden'));
       document.getElementById(pageId).classList.remove('hidden');
 
-      if (pageId === 'calendarPage') renderCalendar();
+      if (pageId === 'calendarPage') loadReservedKeysAndRenderCalendar();
       if (pageId === 'timePage') {
         updateSelectedDateText();
         renderTimeOptions();
       }
       if (pageId === 'formPage') updateReservationSummary();
+    }
+
+    function loadReservedKeysAndRenderCalendar() {
+      fetch(scriptUrl)
+        .then(res => res.json())
+        .then(data => {
+          reservedKeys = Array.isArray(data) ? data : [];
+          renderCalendar();
+        })
+        .catch(() => {
+          reservedKeys = [];
+          renderCalendar();
+        });
+    }
+
+    function getAvailableTimesForDate(date) {
+      const day = date.getDay();
+      if (day >= 1 && day <= 5) return ['오후 4시 30분'];
+      if (day === 6) return ['오전 10시', '오후 3시'];
+      return [];
+    }
+
+    function isFullyBooked(date) {
+      const dateText = formatDate(date);
+      const times = getAvailableTimesForDate(date);
+      if (times.length === 0) return true;
+      return times.every(time => reservedKeys.includes(`${dateText}_${time}`));
     }
 
     function renderCalendar() {
@@ -355,8 +383,9 @@
 
         const isSunday = date.getDay() === 0;
         const isPast = date < today;
+        const fullyBooked = isFullyBooked(date);
 
-        if (isSunday || isPast) {
+        if (isSunday || isPast || fullyBooked) {
           btn.classList.add('disabled');
         } else {
           btn.onclick = () => selectDate(date);
@@ -388,11 +417,11 @@
       fetch(scriptUrl)
         .then(res => res.json())
         .then(data => {
-          reservedTimes = data;
+          reservedKeys = Array.isArray(data) ? data : [];
           renderTimeButtons();
         })
         .catch(() => {
-          reservedTimes = [];
+          reservedKeys = [];
           renderTimeButtons();
         });
     }
@@ -413,9 +442,7 @@
       const selectedDateText = formatDate(selectedDate);
 
       times.forEach(time => {
-        const isReserved = reservedTimes.some(r =>
-          String(r.date) === selectedDateText && String(r.time) === time
-        );
+        const isReserved = reservedKeys.incl
 
         if (!isReserved) {
           const button = document.createElement('button');
