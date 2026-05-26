@@ -1,243 +1,539 @@
-<script>
-const pages = ['homePage', 'calendarPage', 'timePage', 'formPage', 'completePage'];
-const today = new Date();
-today.setHours(0, 0, 0, 0);
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>함성교육 예약</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
 
-let currentDate = new Date();
-let selectedDate = null;
-let selectedTime = null;
-let reservedKeys = [];
+    body {
+      background: #f6f7fb;
+      color: #222;
+      min-height: 100vh;
+    }
 
-const scriptUrl = 'https://script.google.com/macros/s/AKfycbwy_imd9uHlzHUo5PhuLZUCEFwt3BcNmE9risO2Yj6X9LLaeFpHSnYx1_ffv53LJtuUkw/exec';
+    .app {
+      max-width: 430px;
+      margin: 0 auto;
+      min-height: 100vh;
+      background: #fff;
+      box-shadow: 0 0 20px rgba(0,0,0,0.06);
+    }
 
-function goToPage(pageId) {
-  pages.forEach(id => document.getElementById(id).classList.add('hidden'));
-  document.getElementById(pageId).classList.remove('hidden');
+    header {
+      padding: 22px 20px;
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      color: white;
+      border-bottom-left-radius: 24px;
+      border-bottom-right-radius: 24px;
+    }
 
-  if (pageId === 'calendarPage') {
+    header h1 {
+      font-size: 24px;
+      margin-bottom: 6px;
+    }
+
+    header p {
+      font-size: 14px;
+      opacity: 0.92;
+      line-height: 1.5;
+    }
+
+    main {
+      padding: 20px;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 20px;
+      padding: 18px;
+      margin-bottom: 16px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.04);
+    }
+
+    .hero-title {
+      font-size: 22px;
+      line-height: 1.35;
+      margin-bottom: 10px;
+    }
+
+    .hero-text {
+      color: #666;
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 18px;
+    }
+
+    button {
+      width: 100%;
+      border: none;
+      border-radius: 14px;
+      padding: 15px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      background: #2563eb;
+      color: white;
+    }
+
+    button.secondary {
+      background: #eef2ff;
+      color: #2563eb;
+      margin-top: 10px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .section-title {
+      font-size: 19px;
+      margin-bottom: 12px;
+    }
+
+    .calendar-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .calendar-header button {
+      width: 42px;
+      padding: 10px;
+      border-radius: 12px;
+      font-size: 18px;
+    }
+
+    .month-title {
+      font-weight: 800;
+      font-size: 18px;
+    }
+
+    .weekdays, .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 7px;
+      text-align: center;
+    }
+
+    .weekdays div {
+      font-size: 12px;
+      color: #777;
+      padding-bottom: 5px;
+    }
+
+    .day {
+      aspect-ratio: 1 / 1;
+      border-radius: 12px;
+      border: 1px solid #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    .day.disabled {
+      color: #c4c4c4;
+      background: #f3f4f6;
+      cursor: not-allowed;
+    }
+
+    .day.selected {
+      background: #2563eb;
+      color: #fff;
+      border-color: #2563eb;
+      font-weight: 800;
+    }
+
+    .time-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .time-btn {
+      background: #f8fafc;
+      color: #222;
+      border: 1px solid #e5e7eb;
+    }
+
+    .time-btn.selected {
+      background: #2563eb;
+      color: white;
+      border-color: #2563eb;
+    }
+
+    label {
+      display: block;
+      font-weight: 700;
+      margin-bottom: 7px;
+      font-size: 14px;
+    }
+
+    input {
+      width: 100%;
+      border: 1px solid #ddd;
+      border-radius: 14px;
+      padding: 14px;
+      font-size: 15px;
+      margin-bottom: 14px;
+    }
+
+    .summary {
+      background: #f8fafc;
+      border-radius: 16px;
+      padding: 14px;
+      font-size: 14px;
+      line-height: 1.7;
+      margin-bottom: 16px;
+    }
+
+    .complete-icon {
+      width: 64px;
+      height: 64px;
+      background: #dcfce7;
+      color: #16a34a;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 34px;
+      margin: 10px auto 16px;
+    }
+
+    .notice {
+      font-size: 13px;
+      color: #777;
+      line-height: 1.5;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>함성교육</h1>
+      <p>원하는 날짜와 시간을 선택해 상담 예약을 신청하세요.</p>
+    </header>
+
+    <main>
+      <section id="homePage">
+        <div class="card">
+          <h2 class="hero-title">상담 예약을<br />간편하게 신청하세요</h2>
+          <p class="hero-text">
+            평일 예약 가능 시간은 오후 4시 30분입니다.<br />
+            토요일은 오전 10시, 오후 3시 예약이 가능합니다.<br />
+            일요일은 예약이 불가능합니다.
+          </p>
+          <button onclick="goToPage('calendarPage')">예약하기</button>
+        </div>
+
+        <div class="card">
+          <h3 class="section-title">안내사항</h3>
+          <p class="notice">
+            예약 신청 후 담당자가 확인 연락을 드립니다.<br />
+            정확한 연락처와 지역을 입력해 주세요.
+          </p>
+        </div>
+      </section>
+
+      <section id="calendarPage" class="hidden">
+        <div class="card">
+          <h2 class="section-title">날짜 선택</h2>
+          <div class="calendar-header">
+            <button onclick="changeMonth(-1)">‹</button>
+            <div class="month-title" id="monthTitle"></div>
+            <button onclick="changeMonth(1)">›</button>
+          </div>
+          <div class="weekdays">
+            <div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div>
+          </div>
+          <div class="calendar-grid" id="calendarGrid"></div>
+          <p class="notice">오늘 이전 날짜와 일요일은 선택할 수 없습니다.</p>
+        </div>
+        <button class="secondary" onclick="goToPage('homePage')">처음으로</button>
+      </section>
+
+      <section id="timePage" class="hidden">
+        <div class="card">
+          <h2 class="section-title">시간 선택</h2>
+          <div class="summary" id="selectedDateText"></div>
+          <div class="time-list" id="timeList"></div>
+          <p class="notice">이미 예약된 시간은 표시되지 않습니다.</p>
+        </div>
+        <button class="secondary" onclick="goToPage('calendarPage')">날짜 다시 선택</button>
+      </section>
+
+      <section id="formPage" class="hidden">
+        <div class="card">
+          <h2 class="section-title">예약자 정보 입력</h2>
+          <div class="summary" id="reservationSummary"></div>
+
+          <label for="name">이름</label>
+          <input id="name" type="text" placeholder="이름을 입력하세요" />
+
+          <label for="phone">연락처</label>
+          <input id="phone" type="tel" placeholder="010-0000-0000" />
+
+          <label for="region">지역</label>
+          <input id="region" type="text" placeholder="예: 대전 유성구" />
+
+          <button onclick="completeReservation()">예약 신청하기</button>
+          <p class="notice">예약 신청 내용은 구글시트에 자동 저장됩니다.</p>
+        </div>
+        <button class="secondary" onclick="goToPage('timePage')">시간 다시 선택</button>
+      </section>
+
+      <section id="completePage" class="hidden">
+        <div class="card" style="text-align:center;">
+          <div class="complete-icon">✓</div>
+          <h2 class="section-title">예약 신청 완료</h2>
+          <div class="summary" id="completeSummary" style="text-align:left;"></div>
+          <button onclick="resetReservation()">새 예약하기</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const pages = ['homePage', 'calendarPage', 'timePage', 'formPage', 'completePage'];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    let currentDate = new Date();
+    let selectedDate = null;
+    let selectedTime = null;
+    let reservedKeys = [];
+
+    const scriptUrl = 'https://script.google.com/macros/s/AKfycbwy_imd9uHlzHUo5PhuLZUCEFwt3BcNmE9risO2Yj6X9LLaeFpHSnYx1_ffv53LJtuUkw/exec';
+
+    function goToPage(pageId) {
+      pages.forEach(id => document.getElementById(id).classList.add('hidden'));
+      document.getElementById(pageId).classList.remove('hidden');
+
+      if (pageId === 'calendarPage') renderCalendar();
+
+      if (pageId === 'timePage') {
+        updateSelectedDateText();
+        loadReservedTimes();
+      }
+
+      if (pageId === 'formPage') updateReservationSummary();
+    }
+
+    function loadReservedTimes() {
+      const timeList = document.getElementById('timeList');
+      timeList.innerHTML = '<p class="notice">예약 가능 시간을 불러오는 중입니다...</p>';
+
+      fetch(`${scriptUrl}?mode=list&t=${Date.now()}`)
+        .then(res => res.json())
+        .then(data => {
+          reservedKeys = Array.isArray(data) ? data.map(String) : [];
+          renderTimeButtons();
+        })
+        .catch(() => {
+          reservedKeys = [];
+          renderTimeButtons();
+        });
+    }
+
+    function renderCalendar() {
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      const startWeekday = firstDay.getDay();
+      const totalDays = lastDay.getDate();
+
+      document.getElementById('monthTitle').textContent = `${year}년 ${month + 1}월`;
+
+      const grid = document.getElementById('calendarGrid');
+      grid.innerHTML = '';
+
+      for (let i = 0; i < startWeekday; i++) {
+        grid.appendChild(document.createElement('div'));
+      }
+
+      for (let day = 1; day <= totalDays; day++) {
+        const date = new Date(year, month, day);
+        const btn = document.createElement('div');
+        btn.className = 'day';
+        btn.textContent = day;
+
+        const isSunday = date.getDay() === 0;
+        const isPast = date < today;
+
+        if (isSunday || isPast) {
+          btn.classList.add('disabled');
+        } else {
+          btn.onclick = () => selectDate(date);
+        }
+
+        if (selectedDate && isSameDate(date, selectedDate)) {
+          btn.classList.add('selected');
+        }
+
+        grid.appendChild(btn);
+      }
+    }
+
+    function changeMonth(direction) {
+      currentDate.setMonth(currentDate.getMonth() + direction);
+      renderCalendar();
+    }
+
+    function selectDate(date) {
+      selectedDate = date;
+      selectedTime = null;
+      goToPage('timePage');
+    }
+
+    function getAvailableTimes() {
+      const day = selectedDate.getDay();
+
+      if (day >= 1 && day <= 5) {
+        return ['오후 4시 30분'];
+      }
+
+      if (day === 6) {
+        return ['오전 10시', '오후 3시'];
+      }
+
+      return [];
+    }
+
+    function makeReservationKey(date, time) {
+      return `${formatDate(date)}_${time}`;
+    }
+
+    function renderTimeButtons() {
+      const timeList = document.getElementById('timeList');
+      timeList.innerHTML = '';
+
+      const times = getAvailableTimes();
+
+      times.forEach(time => {
+        const key = makeReservationKey(selectedDate, time);
+
+        if (!reservedKeys.includes(key)) {
+          const button = document.createElement('button');
+          button.className = 'time-btn';
+          button.textContent = time;
+          button.onclick = () => selectTime(time, button);
+          timeList.appendChild(button);
+        }
+      });
+
+      if (timeList.innerHTML === '') {
+        timeList.innerHTML = '<p class="notice">예약 가능한 시간이 없습니다.</p>';
+      }
+    }
+
+    function selectTime(time, button) {
+      selectedTime = time;
+      document.querySelectorAll('.time-btn').forEach(btn => btn.classList.remove('selected'));
+      button.classList.add('selected');
+
+      setTimeout(() => {
+        goToPage('formPage');
+      }, 200);
+    }
+
+    function formatDate(date) {
+      const days = ['일', '월', '화', '수', '목', '금', '토'];
+      return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일 (${days[date.getDay()]})`;
+    }
+
+    function isSameDate(a, b) {
+      return a.getFullYear() === b.getFullYear() &&
+        a.getMonth() === b.getMonth() &&
+        a.getDate() === b.getDate();
+    }
+
+    function updateSelectedDateText() {
+      document.getElementById('selectedDateText').innerHTML =
+        `선택한 날짜<br><strong>${formatDate(selectedDate)}</strong>`;
+    }
+
+    function updateReservationSummary() {
+      document.getElementById('reservationSummary').innerHTML = `
+        예약 날짜: <strong>${formatDate(selectedDate)}</strong><br>
+        예약 시간: <strong>${selectedTime}</strong>
+      `;
+    }
+
+    function completeReservation() {
+      const name = document.getElementById('name').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+      const region = document.getElementById('region').value.trim();
+
+      if (!name) {
+        alert('이름을 입력해 주세요.');
+        return;
+      }
+
+      if (!phone) {
+        alert('연락처를 입력해 주세요.');
+        return;
+      }
+
+      if (!region) {
+        alert('지역을 입력해 주세요.');
+        return;
+      }
+
+      const reservation = {
+        name,
+        phone,
+        region,
+        date: formatDate(selectedDate),
+        time: selectedTime
+      };
+
+      const saveUrl =
+        `${scriptUrl}?date=${encodeURIComponent(reservation.date)}&time=${encodeURIComponent(reservation.time)}&name=${encodeURIComponent(reservation.name)}&phone=${encodeURIComponent(reservation.phone)}&region=${encodeURIComponent(reservation.region)}&t=${Date.now()}`;
+
+      const img = new Image();
+      img.src = saveUrl;
+
+      showComplete(reservation);
+    }
+
+    function showComplete(reservation) {
+      document.getElementById('completeSummary').innerHTML = `
+        이름: <strong>${reservation.name}</strong><br>
+        연락처: <strong>${reservation.phone}</strong><br>
+        지역: <strong>${reservation.region}</strong><br>
+        날짜: <strong>${reservation.date}</strong><br>
+        시간: <strong>${reservation.time}</strong><br><br>
+        예약 신청이 완료되었습니다.
+      `;
+
+      goToPage('completePage');
+    }
+
+    function resetReservation() {
+      selectedDate = null;
+      selectedTime = null;
+
+      document.getElementById('name').value = '';
+      document.getElementById('phone').value = '';
+      document.getElementById('region').value = '';
+
+      goToPage('homePage');
+    }
+
     renderCalendar();
-  }
-
-  if (pageId === 'timePage') {
-    updateSelectedDateText();
-    loadReservedTimes();
-  }
-
-  if (pageId === 'formPage') {
-    updateReservationSummary();
-  }
-}
-
-function loadReservedTimes() {
-  fetch(`${scriptUrl}?mode=list&t=${Date.now()}`)
-    .then(res => res.json())
-    .then(data => {
-      reservedKeys = Array.isArray(data) ? data.map(String) : [];
-      renderTimeButtons();
-    })
-    .catch(() => {
-      reservedKeys = [];
-      renderTimeButtons();
-    });
-}
-
-function renderCalendar() {
-  const year = currentDate.getFullYear();
-  const month = currentDate.getMonth();
-
-  const firstDay = new Date(year, month, 1);
-  const lastDay = new Date(year, month + 1, 0);
-
-  const startWeekday = firstDay.getDay();
-  const totalDays = lastDay.getDate();
-
-  document.getElementById('monthTitle').textContent =
-    `${year}년 ${month + 1}월`;
-
-  const grid = document.getElementById('calendarGrid');
-  grid.innerHTML = '';
-
-  for (let i = 0; i < startWeekday; i++) {
-    grid.appendChild(document.createElement('div'));
-  }
-
-  for (let day = 1; day <= totalDays; day++) {
-    const date = new Date(year, month, day);
-
-    const btn = document.createElement('div');
-    btn.className = 'day';
-    btn.textContent = day;
-
-    const isSunday = date.getDay() === 0;
-    const isPast = date < today;
-
-    if (isSunday || isPast) {
-      btn.classList.add('disabled');
-    } else {
-      btn.onclick = () => selectDate(date);
-    }
-
-    if (selectedDate && isSameDate(date, selectedDate)) {
-      btn.classList.add('selected');
-    }
-
-    grid.appendChild(btn);
-  }
-}
-
-function changeMonth(direction) {
-  currentDate.setMonth(currentDate.getMonth() + direction);
-  renderCalendar();
-}
-
-function selectDate(date) {
-  selectedDate = date;
-  selectedTime = null;
-  goToPage('timePage');
-}
-
-function getAvailableTimes() {
-  const day = selectedDate.getDay();
-
-  if (day >= 1 && day <= 5) {
-    return ['오후 4시 30분'];
-  }
-
-  if (day === 6) {
-    return ['오전 10시', '오후 3시'];
-  }
-
-  return [];
-}
-
-function makeReservationKey(date, time) {
-  return `${formatDate(date)}_${time}`;
-}
-
-function renderTimeButtons() {
-  const timeList = document.getElementById('timeList');
-  timeList.innerHTML = '';
-
-  const times = getAvailableTimes();
-
-  times.forEach(time => {
-    const key = makeReservationKey(selectedDate, time);
-
-    if (!reservedKeys.includes(key)) {
-      const button = document.createElement('button');
-
-      button.className = 'time-btn';
-      button.textContent = time;
-
-      button.onclick = () => selectTime(time, button);
-
-      timeList.appendChild(button);
-    }
-  });
-
-  if (timeList.innerHTML === '') {
-    timeList.innerHTML =
-      '<p class="notice">예약 가능한 시간이 없습니다.</p>';
-  }
-}
-
-function selectTime(time, button) {
-  selectedTime = time;
-
-  document.querySelectorAll('.time-btn')
-    .forEach(btn => btn.classList.remove('selected'));
-
-  button.classList.add('selected');
-
-  setTimeout(() => {
-    goToPage('formPage');
-  }, 200);
-}
-
-function formatDate(date) {
-  const days = ['일', '월', '화', '수', '목', '금', '토'];
-
-  return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일 (${days[date.getDay()]})`;
-}
-
-function isSameDate(a, b) {
-  return a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate();
-}
-
-function updateSelectedDateText() {
-  document.getElementById('selectedDateText').innerHTML =
-    `선택한 날짜<br><strong>${formatDate(selectedDate)}</strong>`;
-}
-
-function updateReservationSummary() {
-  document.getElementById('reservationSummary').innerHTML = `
-    예약 날짜: <strong>${formatDate(selectedDate)}</strong><br>
-    예약 시간: <strong>${selectedTime}</strong>
-  `;
-}
-
-function completeReservation() {
-  const name = document.getElementById('name').value.trim();
-  const phone = document.getElementById('phone').value.trim();
-  const region = document.getElementById('region').value.trim();
-
-  if (!name) {
-    alert('이름을 입력해 주세요.');
-    return;
-  }
-
-  if (!phone) {
-    alert('연락처를 입력해 주세요.');
-    return;
-  }
-
-  if (!region) {
-    alert('지역을 입력해 주세요.');
-    return;
-  }
-
-  const reservation = {
-    name,
-    phone,
-    region,
-    date: formatDate(selectedDate),
-    time: selectedTime
-  };
-
-  const saveUrl =
-    `${scriptUrl}?date=${encodeURIComponent(reservation.date)}&time=${encodeURIComponent(reservation.time)}&name=${encodeURIComponent(reservation.name)}&phone=${encodeURIComponent(reservation.phone)}&region=${encodeURIComponent(reservation.region)}&t=${Date.now()}`;
-
-  const img = new Image();
-  img.src = saveUrl;
-
-  showComplete(reservation);
-}
-
-function showComplete(reservation) {
-  document.getElementById('completeSummary').innerHTML = `
-    이름: <strong>${reservation.name}</strong><br>
-    연락처: <strong>${reservation.phone}</strong><br>
-    지역: <strong>${reservation.region}</strong><br>
-    날짜: <strong>${reservation.date}</strong><br>
-    시간: <strong>${reservation.time}</strong><br><br>
-    예약 신청이 완료되었습니다.
-  `;
-
-  goToPage('completePage');
-}
-
-function resetReservation() {
-  selectedDate = null;
-  selectedTime = null;
-
-  document.getElementById('name').value = '';
-  document.getElementById('phone').value = '';
-  document.getElementById('region').value = '';
-
-  goToPage('homePage');
-}
-
-renderCalendar();
-</script>
+  </script>
+</body>
+</html>
